@@ -2,8 +2,12 @@
 In-memory data store + the deterministic "business logic" layer.
 
 Per the architecture:
-  - The LLM/graph layer handles clustering *reasoning* (here approximated with
-    transparent keyword matching so the demo runs with zero external API keys).
+  - The Issue Discovery agent clusters raw feedback with BERTopic and then
+    interprets each topic against ISSUE_TAXONOMY to resolve it to a business
+    issue_key (see discover_issue_clusters below). It falls back to
+    transparent per-item keyword matching (classify_feedback) for outliers,
+    small batches, or if BERTopic isn't installed, so the app always runs
+    end-to-end with zero external API keys.
   - This module handles everything that should be deterministic: scoring,
     thresholds, aggregation and persistence.
 """
@@ -12,7 +16,26 @@ from __future__ import annotations
 import itertools
 import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+
+# BERTopic is an optional dependency: the Issue Discovery agent below uses it
+# when available (and when there's enough feedback to form real clusters),
+# and transparently falls back to the deterministic keyword classifier
+# otherwise, so the app keeps running with zero external services/API keys.
+# NOTE: we deliberately pass BERTopic a lightweight in-process TF-IDF + SVD
+# embedder (see _TfidfEmbedder below) instead of its default
+# sentence-transformers backend, so this stays free of a torch/HF download.
+try:
+    from bertopic import BERTopic
+    from bertopic.backend import BaseEmbedder
+    from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+    from sklearn.decomposition import TruncatedSVD
+    from hdbscan import HDBSCAN
+    from umap import UMAP
+
+    _BERTOPIC_AVAILABLE = True
+except ImportError:  # pragma: no cover - exercised when optional deps absent
+    _BERTOPIC_AVAILABLE = False
 
 
 def new_id(prefix: str) -> str:
@@ -235,12 +258,14 @@ STORE = Store()
 # Scoring helpers (deterministic — the LLM never sets these numbers directly)
 # ---------------------------------------------------------------------------
 def classify_feedback(text: str) -> str:
-    """Keyword-based cross-channel issue classification.
+    """Keyword-based single-item issue classification.
 
-    This stands in for the Issue Discovery agent's semantic clustering step
-    so the app runs end-to-end with zero external API keys. If an
-    OPENAI_API_KEY / compatible LLM is configured (see llm.py), this can be
-    swapped for a real semantic classification without changing callers.
+    This is the deterministic fallback used by discover_issue_clusters()
+    below: per-topic-outlier items, and the whole pipeline when there isn't
+    enough feedback to cluster or BERTopic isn't installed, get labeled this
+    way. Kept as its own function (rather than inlined) so it can still be
+    called standalone, and so it can be swapped for a real LLM call later
+    without touching callers.
     """
     text_l = text.lower()
     best_key, best_score = GENERAL_ISSUE_KEY, 0
@@ -249,6 +274,207 @@ def classify_feedback(text: str) -> str:
         if score > best_score:
             best_key, best_score = key, score
     return best_key
+
+
+# ---------------------------------------------------------------------------
+# Issue Discovery agent: BERTopic clustering + interpretation.
+#
+#   feedback -> BERTopic -> raw topic clusters (topic_0, topic_1, ...)
+#            -> interpretation step: for each topic, look at its top
+#               c-TF-IDF keywords + a few representative docs and match them
+#               against the ISSUE_TAXONOMY vocabulary
+#            -> business issue_key (payment_failure, login_failure, ...)
+#            -> state["clusters"]
+#
+# BERTopic tells you *that* feedback items are similar; it never tells you
+# *what the topic means* in taxonomy terms (it hands back "topic_3", not
+# "payment_failure"). The interpretation step below is what closes that gap,
+# so downstream nodes (root cause, prioritization, intervention) keep
+# operating on the same taxonomy keys they always have.
+# ---------------------------------------------------------------------------
+
+# BERTopic/HDBSCAN need a reasonable number of documents to find real
+# clusters; below this, fall back straight to per-item keyword
+# classification rather than let the model manufacture noisy topics out of a
+# handful of docs.
+MIN_DOCS_FOR_TOPIC_MODEL = 15
+
+# Minimum interpretation score (see _match_topic_to_issue) for a topic to be
+# assigned a taxonomy issue_key. Topics that don't clear this bar are
+# treated the same as BERTopic outliers: routed to per-item fallback instead
+# of being forced into a taxonomy bucket they don't actually match.
+TOPIC_MATCH_MIN_SCORE = 2.0
+
+
+class _TfidfEmbedder(BaseEmbedder if _BERTOPIC_AVAILABLE else object):
+    """Lightweight in-process embedding backend for BERTopic.
+
+    Swaps out BERTopic's default sentence-transformers backend (which
+    downloads a model and pulls in torch) for a TF-IDF + truncated-SVD
+    embedding fit on the batch itself. This keeps the Issue Discovery agent
+    fully offline/local, consistent with the rest of the app's "zero
+    external API keys" design.
+    """
+
+    def __init__(self, n_components: int = 15):
+        super().__init__()
+        self.n_components = n_components
+        self._vectorizer: Optional["TfidfVectorizer"] = None
+        self._svd: Optional["TruncatedSVD"] = None
+
+    def embed(self, documents, verbose: bool = False):
+        docs = list(documents)
+        if self._vectorizer is None:
+            # Unigrams + sublinear TF scaling produce a denser, less sparse
+            # feature space than unigrams+bigrams on short feedback text,
+            # which empirically gives HDBSCAN cleaner separation on small
+            # batches. Topic *labeling* (get_topic()) still uses the richer
+            # bigram vectorizer_model passed to BERTopic separately, so
+            # phrase-level keywords like "card declined" are preserved there.
+            self._vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 1), min_df=1, sublinear_tf=True)
+            tfidf = self._vectorizer.fit_transform(docs)
+            n_components = max(2, min(self.n_components, tfidf.shape[1] - 1, tfidf.shape[0] - 1))
+            self._svd = TruncatedSVD(n_components=n_components, random_state=42)
+            return self._svd.fit_transform(tfidf)
+        tfidf = self._vectorizer.transform(docs)
+        return self._svd.transform(tfidf)
+
+
+_sentence_embedder = None
+_sentence_embedder_checked = False
+
+
+def _get_embedding_model():
+    """Prefers real sentence-transformer embeddings (much better semantic
+    clustering than TF-IDF) when the model is already available locally;
+    transparently falls back to the offline _TfidfEmbedder otherwise so
+    Issue Discovery never hard-depends on a model download / torch / a GPU.
+    Checked once per process and cached.
+    """
+    global _sentence_embedder, _sentence_embedder_checked
+    if _sentence_embedder_checked:
+        return _sentence_embedder if _sentence_embedder is not None else _TfidfEmbedder(n_components=15)
+
+    _sentence_embedder_checked = True
+    try:
+        from sentence_transformers import SentenceTransformer
+        _sentence_embedder = SentenceTransformer("all-MiniLM-L6-v2")
+    except Exception:
+        _sentence_embedder = None
+    return _sentence_embedder if _sentence_embedder is not None else _TfidfEmbedder(n_components=15)
+
+
+def _build_topic_model(n_docs: int) -> "BERTopic":
+    """Constructs a BERTopic instance with parameters scaled to the size of
+    the batch being clustered, since HDBSCAN/UMAP defaults tuned for large
+    corpora produce degenerate clusters (or crash outright) on small ones."""
+    min_cluster_size = max(3, n_docs // 10)
+    n_neighbors = max(2, min(10, n_docs // 4))
+    n_components = max(2, min(5, n_docs // 6))
+
+    return BERTopic(
+        embedding_model=_get_embedding_model(),
+        vectorizer_model=CountVectorizer(stop_words="english", ngram_range=(1, 2), min_df=1),
+        umap_model=UMAP(n_neighbors=n_neighbors, n_components=n_components, min_dist=0.0, random_state=42),
+        hdbscan_model=HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1),
+        calculate_probabilities=False,
+        verbose=False,
+    )
+
+
+def _match_topic_to_issue(topic_keywords: List[str], sample_texts: List[str]) -> Tuple[str, float]:
+    """Interpretation step: decides which business issue (if any) a BERTopic
+    topic corresponds to.
+
+    Reuses the same taxonomy keyword vocabulary classify_feedback() draws
+    on, so a topic's meaning is grounded in the same domain knowledge as the
+    rest of the app instead of an opaque embedding similarity score. Topic
+    keyword hits are weighted higher than sample-document hits, since they
+    summarize the whole cluster rather than just the first few items in it.
+    """
+    joined_keywords = " ".join(topic_keywords).lower()
+    sample_blob = " ".join(sample_texts).lower()
+
+    best_key, best_score = GENERAL_ISSUE_KEY, 0.0
+    for key, spec in ISSUE_TAXONOMY.items():
+        keyword_hits = sum(1 for kw in spec["keywords"] if kw in joined_keywords)
+        text_hits = sum(1 for kw in spec["keywords"] if kw in sample_blob)
+        score = (2.0 * keyword_hits) + (1.0 * text_hits)
+        if score > best_score:
+            best_key, best_score = key, score
+    return best_key, best_score
+
+
+def _keyword_cluster(feedback: List[dict]) -> Dict[str, List[dict]]:
+    """Per-item keyword clustering: the original classify_feedback-per-item
+    approach, used as the fallback when BERTopic isn't available or there's
+    too little feedback to form real topic clusters."""
+    clusters: Dict[str, List[dict]] = {}
+    for item in feedback:
+        key = classify_feedback(item["text"])
+        clusters.setdefault(key, []).append(item)
+    return clusters
+
+
+def discover_issue_clusters(feedback: List[dict]) -> Dict[str, List[dict]]:
+    """Issue Discovery agent: BERTopic clustering + interpretation.
+
+    1. Cluster feedback into topics with BERTopic (topic_0, topic_1, ...).
+    2. Interpret each topic: match its top keywords + a few representative
+       docs against ISSUE_TAXONOMY to resolve it to a business issue_key.
+    3. Anything BERTopic can't confidently place — outlier docs (topic -1)
+       and topics whose interpretation score doesn't clear
+       TOPIC_MATCH_MIN_SCORE — falls back to per-item keyword
+       classification instead of being dropped or mis-bucketed.
+
+    Falls back to pure per-item keyword clustering entirely when BERTopic
+    isn't installed, or when there's too little feedback
+    (< MIN_DOCS_FOR_TOPIC_MODEL) for topic modeling to be meaningful.
+
+    Returns the same Dict[issue_key, List[feedback_item]] shape the graph's
+    downstream nodes (root cause, prioritization, intervention) already
+    expect, so nothing beyond this function needs to change.
+    """
+    if not _BERTOPIC_AVAILABLE or len(feedback) < MIN_DOCS_FOR_TOPIC_MODEL:
+        return _keyword_cluster(feedback)
+
+    texts = [item["text"] for item in feedback]
+    try:
+        model = _build_topic_model(len(texts))
+        topics, _ = model.fit_transform(texts)
+    except Exception:
+        # Any topic-modeling failure (degenerate embeddings, clustering
+        # errors, etc.) should degrade gracefully rather than break analysis.
+        return _keyword_cluster(feedback)
+
+    clusters: Dict[str, List[dict]] = {}
+    fallback_items: List[dict] = []
+
+    for topic_id in sorted(set(topics)):
+        idxs = [i for i, t in enumerate(topics) if t == topic_id]
+        items = [feedback[i] for i in idxs]
+
+        if topic_id == -1:
+            fallback_items.extend(items)
+            continue
+
+        topic_words = [w for w, _ in (model.get_topic(topic_id) or [])]
+        sample_texts = [it["text"] for it in items[:5]]
+        issue_key, score = _match_topic_to_issue(topic_words, sample_texts)
+
+        if score < TOPIC_MATCH_MIN_SCORE:
+            fallback_items.extend(items)
+            continue
+
+        clusters.setdefault(issue_key, []).extend(items)
+
+    # Best-effort per-item classification for anything the topic model
+    # couldn't confidently place, so no feedback silently disappears.
+    for item in fallback_items:
+        issue_key = classify_feedback(item["text"])
+        clusters.setdefault(issue_key, []).append(item)
+
+    return clusters
 
 
 def pct_change(baseline: float, current: float) -> float:

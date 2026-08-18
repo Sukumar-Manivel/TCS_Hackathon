@@ -22,6 +22,7 @@ from store import (
     ISSUE_TAXONOMY,
     GENERAL_ISSUE_KEY,
     classify_feedback,
+    discover_issue_clusters,
     evaluate_hypotheses,
     compute_priority,
     build_intervention,
@@ -37,12 +38,16 @@ class PipelineState(TypedDict, total=False):
 
 
 def issue_discovery(state: PipelineState) -> PipelineState:
-    feedback = state["feedback"]
-    clusters: Dict[str, List[dict]] = {}
-    for item in feedback:
-        key = classify_feedback(item["text"])
-        clusters.setdefault(key, []).append(item)
-    state["clusters"] = clusters
+    """Issue Discovery agent.
+
+    Pipeline: feedback -> BERTopic clustering -> per-topic interpretation
+    (map each discovered topic to a business issue_key from ISSUE_TAXONOMY)
+    -> state["clusters"]. See discover_issue_clusters() in store.py for the
+    full clustering + interpretation implementation and its fallback to
+    per-item keyword classification (classify_feedback) when BERTopic isn't
+    available or there isn't enough feedback to form real clusters.
+    """
+    state["clusters"] = discover_issue_clusters(state["feedback"])
     return state
 
 

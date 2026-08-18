@@ -14,6 +14,7 @@ Per the architecture:
 from __future__ import annotations
 
 import itertools
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
@@ -115,8 +116,10 @@ ISSUE_TAXONOMY: Dict[str, dict] = {
         "journey": "In-App Usage",
         "feature": "Mobile App Stability",
         "keywords": [
-            "crash", "freeze", "force close", "not responding", "glitch",
-            "app closes", "stuck loading",
+            "crash", "crashes", "crashing", "freeze", "freezes", "freezing",
+            "force close", "force-close", "force closing", "force-closing", "forced close",
+            "not responding", "glitch", "app closes", "closes whenever", "shuts down",
+            "shutting down", "stuck loading", "black screen",
         ],
         "hypotheses": [
             {"name": "Elevated crash rate in latest release", "metric": "crash_rate"},
@@ -254,11 +257,60 @@ class Store:
 STORE = Store()
 
 
+CATEGORY_ALIAS_MAP: Dict[str, str] = {
+    "crash": "app_crash",
+    "crashes": "app_crash",
+    "crashing": "app_crash",
+    "stability": "app_crash",
+    "bug": "app_crash",
+    "force_close": "app_crash",
+    "force-close": "app_crash",
+    "freeze": "app_crash",
+    "app_crash": "app_crash",
+    "payment": "payment_failure",
+    "payments": "payment_failure",
+    "checkout": "payment_failure",
+    "payment_failure": "payment_failure",
+    "transaction": "payment_failure",
+    "login": "login_failure",
+    "auth": "login_failure",
+    "authentication": "login_failure",
+    "otp": "login_failure",
+    "login_failure": "login_failure",
+    "delivery": "delivery_delay",
+    "shipping": "delivery_delay",
+    "courier": "delivery_delay",
+    "delivery_delay": "delivery_delay",
+    "support": "support_experience",
+    "support_experience": "support_experience",
+    "customer_service": "support_experience",
+    "helpdesk": "support_experience",
+    "ui": "ui_ux_confusion",
+    "ux": "ui_ux_confusion",
+    "ui_ux": "ui_ux_confusion",
+    "ui_ux_confusion": "ui_ux_confusion",
+    "navigation": "ui_ux_confusion",
+    "design": "ui_ux_confusion",
+    "billing": "pricing_billing",
+    "pricing": "pricing_billing",
+    "pricing_billing": "pricing_billing",
+    "price": "pricing_billing",
+    "charge": "pricing_billing",
+    "refund": "pricing_billing",
+    "performance": "performance_slow",
+    "performance_slow": "performance_slow",
+    "speed": "performance_slow",
+    "latency": "performance_slow",
+    "slow": "performance_slow",
+    "lag": "performance_slow",
+}
+
+
 # ---------------------------------------------------------------------------
 # Scoring helpers (deterministic — the LLM never sets these numbers directly)
 # ---------------------------------------------------------------------------
-def classify_feedback(text: str) -> str:
-    """Keyword-based single-item issue classification.
+def classify_feedback(text: str, category: Optional[str] = None) -> str:
+    """Keyword and category based single-item issue classification.
 
     This is the deterministic fallback used by discover_issue_clusters()
     below: per-topic-outlier items, and the whole pipeline when there isn't
@@ -267,10 +319,23 @@ def classify_feedback(text: str) -> str:
     called standalone, and so it can be swapped for a real LLM call later
     without touching callers.
     """
-    text_l = text.lower()
+    if category:
+        cat_norm = str(category).strip().lower().replace(" ", "_").replace("-", "_")
+        if cat_norm in CATEGORY_ALIAS_MAP:
+            return CATEGORY_ALIAS_MAP[cat_norm]
+        if cat_norm in ISSUE_TAXONOMY:
+            return cat_norm
+
+    text_raw = text.lower()
+    text_clean = re.sub(r'[\-_/]+', ' ', text_raw)
+
     best_key, best_score = GENERAL_ISSUE_KEY, 0
     for key, spec in ISSUE_TAXONOMY.items():
-        score = sum(1 for kw in spec["keywords"] if kw in text_l)
+        score = 0
+        for kw in spec["keywords"]:
+            kw_clean = re.sub(r'[\-_/]+', ' ', kw.lower())
+            if kw in text_raw or kw_clean in text_clean:
+                score += 1
         if score > best_score:
             best_key, best_score = key, score
     return best_key
@@ -411,7 +476,7 @@ def _keyword_cluster(feedback: List[dict]) -> Dict[str, List[dict]]:
     too little feedback to form real topic clusters."""
     clusters: Dict[str, List[dict]] = {}
     for item in feedback:
-        key = classify_feedback(item["text"])
+        key = classify_feedback(item["text"], category=item.get("category"))
         clusters.setdefault(key, []).append(item)
     return clusters
 

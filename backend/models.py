@@ -6,18 +6,40 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 Channel = Literal["app_review", "support_ticket", "survey", "email", "social"]
 
+def normalize_channel(val: Optional[str]) -> str:
+    if not val:
+        return "survey"
+    v = str(val).strip().lower()
+    if v in ("app_review", "app review", "app_store", "play_store", "store", "review", "reviews"):
+        return "app_review"
+    if v in ("support_ticket", "support", "ticket", "zendesk", "intercom", "chat", "helpdesk", "case"):
+        return "support_ticket"
+    if v in ("email", "mail", "inbox"):
+        return "email"
+    if v in ("social", "twitter", "x", "reddit", "facebook", "linkedin", "social_media"):
+        return "social"
+    if v in ("survey", "nps", "csat", "feedback_form", "web", "form"):
+        return "survey"
+    return "survey"
+
 
 class FeedbackItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     id: Optional[str] = None
-    channel: Channel
+    channel: str = "survey"
     text: str
     customer_id: Optional[str] = None
+    category: Optional[str] = None
     timestamp: Optional[str] = None
+
+    def model_post_init(self, __context) -> None:
+        self.channel = normalize_channel(self.channel)
 
 
 class OperationalMetric(BaseModel):

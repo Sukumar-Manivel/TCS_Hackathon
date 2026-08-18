@@ -1,0 +1,64 @@
+{
+  "feedback": [
+    {
+      "channel": "app_review",
+      "text": "The new update is incredibly slow. Takes forever to load anything.",
+      "customer_id": "C-401"
+    },
+    {
+      "channel": "support_ticket",
+      "text": "Pages are lagging constantly since yesterday, it's almost unusable.",
+      "customer_id": "C-402"
+    },
+    {
+      "channel": "survey",
+      "text": "Very sluggish performance on the dashboard. Loading forever.",
+      "customer_id": "C-403"
+    },
+    {
+      "channel": "email",
+      "text": "I was double charged for my monthly subscription! Very angry.",
+      "customer_id": "C-501"
+    },
+    {
+      "channel": "support_ticket",
+      "text": "Why did my price increase without notice? Also there's a hidden fee.",
+      "customer_id": "C-502"
+    },
+    {
+      "channel": "social",
+      "text": "Overcharged again by this company. Anyone else having billing issues?",
+      "customer_id": "C-503"
+    },
+    {
+      "channel": "survey",
+      "text": "The navigation is very confusing now, I cannot find my settings.",
+      "customer_id": "C-601"
+    },
+    {
+      "channel": "app_review",
+      "text": "UI is bad and cluttered, hard to use the new menus.",
+      "customer_id": "C-602"
+    }
+  ],
+  "operational_metrics": [
+    {
+      "name": "api_latency_ms",
+      "baseline": 150.0,
+      "current": 850.0,
+      "unit": "ms"
+    },
+    {
+      "name": "billing_error_rate",
+      "baseline": 0.005,
+      "current": 0.042,
+      "unit": "rate"
+    },
+    {
+      "name": "flow_drop_off_rate",
+      "baseline": 0.15,
+      "current": 0.38,
+      "unit": "rate"
+    }
+  ]
+}

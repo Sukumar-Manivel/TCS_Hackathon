@@ -47,3 +47,10 @@ class OutcomeReport(BaseModel):
     after_value: float
     target_value: Optional[float] = None
     reported_at: Optional[str] = None
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]

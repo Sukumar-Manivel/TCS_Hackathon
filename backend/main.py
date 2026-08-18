@@ -7,12 +7,16 @@ persist results in the in-memory store.
 """
 from __future__ import annotations
 
+import json
+import os
+import urllib.request
+import urllib.error
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import IngestPayload, ValidationDecision, OutcomeReport
+from models import IngestPayload, ValidationDecision, OutcomeReport, ChatRequest
 from store import STORE, now_iso, kpi_direction_is_lower_better
 from graph import run_analysis
 from sample_data import SAMPLE_FEEDBACK, SAMPLE_OPERATIONAL_METRICS
@@ -182,3 +186,55 @@ def report_outcome(report: OutcomeReport):
 @app.get("/outcomes")
 def list_outcomes():
     return {"outcomes": STORE.outcomes}
+
+@app.post("/api/chat")
+def chat_endpoint(request: ChatRequest):
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENROUTER_API_KEY environment variable is not set. Please set it to use the AI assistant.")
+        
+    issues = list(STORE.issues.values())
+    case_context = "\n".join(
+        f"- {i['issue_id']}: '{i['label']}' (Status: {i['status']}, Priority Score: {i.get('priority_score', 0)})" 
+        for i in issues
+    )
+    if not case_context:
+        case_context = "No active cases."
+        
+    system_prompt = f"""You are the Evidence Board AI assistant, embedded in a customer intelligence dashboard. 
+You help a product/support team understand feedback, root causes and prioritization. 
+Be concise, direct, and practical — a few short sentences or a tight list, not long essays. 
+Here is the current case data:
+{case_context}"""
+
+    messages = [{"role": "system", "content": system_prompt}]
+    for msg in request.messages:
+        messages.append({"role": msg.role, "content": msg.content})
+
+    data = json.dumps({
+        "model": "anthropic/claude-3-haiku",
+        "messages": messages,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+    )
+    
+    try:
+        with urllib.request.urlopen(req) as resp:
+            resp_body = resp.read()
+            resp_json = json.loads(resp_body)
+            reply = resp_json["choices"][0]["message"]["content"]
+            return {"reply": reply}
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8")
+        print("OpenRouter Error:", error_body)
+        raise HTTPException(status_code=502, detail=f"Error from OpenRouter: {e.reason}")
+    except Exception as e:
+        print("Chat Error:", str(e))
+        raise HTTPException(status_code=500, detail="An error occurred communicating with OpenRouter.")

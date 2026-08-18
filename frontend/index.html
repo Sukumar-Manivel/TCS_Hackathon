@@ -1,583 +1,1472 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Evidence Board — Customer Intelligence Console</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evidence Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;0,700;0,900;1,400;1,500&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0b0f;
+      --panel: #12141b;
+      --panel-2: #0e1016;
+      --border: #242732;
+      --border-soft: #1c1f28;
+      --text: #e9e7e0;
+      --text-dim: #8b8d98;
+      --text-faint: #565a68;
+      --gold: #d4a853;
+      --gold-soft: rgba(212, 168, 83, 0.10);
+      --gold-border: rgba(212, 168, 83, 0.45);
+      --red: #e0685a;
+      --red-soft: rgba(224, 104, 90, 0.10);
+      --blue: #6f9fd8;
+      --blue-soft: rgba(111, 159, 216, 0.10);
+      --green: #7cae82;
+      --teal: #4d7468;
+      --teal-hover: #5a8579;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      height: 100%;
+    }
+
+    body {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    .serif {
+      font-family: 'Source Serif 4', serif;
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ---------- SIDEBAR ---------- */
+    .sidebar {
+      width: 230px;
+      flex: 0 0 230px;
+      background: var(--panel-2);
+      border-right: 1px solid var(--border-soft);
+      display: flex;
+      flex-direction: column;
+      padding: 22px 14px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 6px 22px 6px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--gold-border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-family: 'Source Serif 4', serif;
+      font-weight: 700;
+      font-size: 14px;
+      flex: 0 0 34px;
+    }
+
+    .brand-name {
+      font-family: 'Source Serif 4', serif;
+      font-weight: 700;
+      font-size: 15px;
+      line-height: 1.15;
+    }
+
+    .brand-sub {
+      color: var(--text-faint);
+      font-size: 9.5px;
+      letter-spacing: .03em;
+      margin-top: 2px;
+    }
+
+    nav.navlist {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 6px;
+      flex: 1;
+    }
+
+    .navitem {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border-radius: 6px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      font-size: 12.5px;
+      letter-spacing: .01em;
+      transition: background .12s, color .12s;
+      user-select: none;
+    }
+
+    .navitem svg {
+      flex: 0 0 15px;
+      width: 15px;
+      height: 15px;
+      opacity: .85;
+    }
+
+    .navitem:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+    }
+
+    .navitem.active {
+      background: var(--gold-soft);
+      color: var(--gold);
+      border-left: 2px solid var(--gold);
+    }
+
+    .navitem.active svg {
+      opacity: 1;
+    }
+
+    .nav-divider {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 10px 4px;
+    }
+
+    .nav-label {
+      color: var(--text-faint);
+      font-size: 9.5px;
+      letter-spacing: .08em;
+      padding: 10px 10px 4px 10px;
+    }
+
+    .sidebar-foot {
+      border-top: 1px solid var(--border-soft);
+      padding-top: 12px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--text-faint);
+      font-size: 10.5px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      flex: 0 0 7px;
+    }
+
+    /* ---------- MAIN ---------- */
+    .main {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 30px;
+      border-bottom: 1px solid var(--border-soft);
+      background: var(--bg);
+    }
+
+    .topbar-title h1 {
+      font-size: 24px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .topbar-title p {
+      margin: 4px 0 0 0;
+      color: var(--text-dim);
+      font-size: 11.5px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text-dim);
+      font-size: 11px;
+      margin-right: 8px;
+    }
+
+    .btn {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11.5px;
+      padding: 9px 15px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      transition: all .12s;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      border-color: var(--text-dim);
+    }
+
+    .btn-solid {
+      background: var(--text);
+      color: #0a0b0f;
+      border-color: var(--text);
+      font-weight: 600;
+    }
+
+    .btn-solid:hover {
+      background: #fff;
+    }
+
+    .btn-teal {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #eef4f1;
+    }
+
+    .btn-teal:hover {
+      background: var(--teal-hover);
+    }
+
+    .btn-red {
+      border-color: rgba(224, 104, 90, 0.5);
+      color: var(--red);
+      background: transparent;
+    }
+
+    .btn-red:hover {
+      background: var(--red-soft);
+    }
+
+    .content {
+      padding: 26px 30px 60px 30px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    /* ---------- STAT ROW ---------- */
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: var(--border-soft);
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 22px;
+    }
+
+    .stat {
+      background: var(--panel);
+      padding: 20px 18px;
+    }
+
+    .stat .num {
+      font-family: 'Source Serif 4', serif;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .stat .lbl {
+      color: var(--text-dim);
+      font-size: 9.5px;
+      letter-spacing: .06em;
+      margin-top: 8px;
+    }
+
+    .num.red {
+      color: var(--red);
+    }
+
+    .num.green {
+      color: var(--green);
+    }
+
+    .num.gold {
+      color: var(--gold);
+    }
+
+    /* ---------- CARDS / PANELS ---------- */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .section-title {
+      color: var(--text-faint);
+      font-size: 10px;
+      letter-spacing: .08em;
+      margin-bottom: 12px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .case-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: border-color .12s, transform .12s;
+    }
+
+    .case-card:hover {
+      border-color: var(--text-dim);
+    }
+
+    .case-card.selected {
+      border-color: var(--gold-border);
+      background: linear-gradient(180deg, rgba(212, 168, 83, 0.06), transparent);
+    }
+
+    .case-card .row1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .case-card .issue-id {
+      color: var(--text-faint);
+      font-size: 10.5px;
+    }
+
+    .case-card .score {
+      font-family: 'Source Serif 4', serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .case-card .title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .case-card .meta {
+      color: var(--text-dim);
+      font-size: 10.5px;
+      margin-left: 8px;
+    }
+
+    .case-card .status {
+      color: var(--text-faint);
+      font-style: italic;
+      font-size: 11px;
+      margin-top: 8px;
+      font-family: 'Source Serif 4', serif;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      letter-spacing: .03em;
+      border: 1px solid;
+      font-weight: 600;
+    }
+
+    .badge-high {
+      color: var(--gold);
+      border-color: var(--gold-border);
+      background: var(--gold-soft);
+    }
+
+    .badge-medium {
+      color: var(--blue);
+      border-color: rgba(111, 159, 216, .45);
+      background: var(--blue-soft);
+    }
+
+    .badge-low {
+      color: var(--text-dim);
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tag {
+      display: inline-flex;
+      padding: 5px 11px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 11px;
+    }
+
+    .detail-header {
+      padding: 24px 26px 0 26px;
+    }
+
+    .detail-eyebrow {
+      color: var(--text-faint);
+      font-size: 10.5px;
+      letter-spacing: .05em;
+      margin-bottom: 10px;
+    }
+
+    .detail-title {
+      font-size: 28px;
+      margin: 0 0 16px 0;
+    }
+
+    .detail-badges {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .hr {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 0 26px;
+    }
+
+    .breakdown {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      padding: 22px 26px;
+    }
+
+    .breakdown .num {
+      font-family: 'Source Serif 4', serif;
+      font-size: 26px;
+      font-weight: 700;
+    }
+
+    .breakdown .lbl {
+      color: var(--text-dim);
+      font-size: 9.5px;
+      letter-spacing: .05em;
+      margin-top: 6px;
+    }
+
+    .exhibits {
+      padding: 6px 26px 26px 26px;
+    }
+
+    .exhibit-title {
+      color: var(--text-faint);
+      font-size: 10.5px;
+      letter-spacing: .05em;
+      margin-bottom: 14px;
+    }
+
+    .quote {
+      border-left: 2px solid var(--gold-border);
+      padding: 2px 0 2px 16px;
+      margin-bottom: 16px;
+      font-family: 'Source Serif 4', serif;
+      font-style: italic;
+      font-size: 15px;
+      color: #ddd9cf;
+      line-height: 1.5;
+    }
+
+    /* ---------- EVIDENCE TABLE ---------- */
+    table.evidence {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table.evidence th {
+      text-align: left;
+      color: var(--text-faint);
+      font-size: 9.5px;
+      letter-spacing: .06em;
+      font-weight: 500;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    table.evidence td {
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 12px;
+      color: var(--text-dim);
+      vertical-align: top;
+    }
+
+    table.evidence tr:hover td {
+      background: rgba(255, 255, 255, 0.015);
+    }
+
+    table.evidence td.quote-cell {
+      color: var(--text);
+      font-family: 'Source Serif 4', serif;
+      font-style: italic;
+      font-size: 13.5px;
+      max-width: 420px;
+    }
+
+    .chip {
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-size: 9.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    /* ---------- ANALYTICS ---------- */
+    .chart-panel {
+      padding: 22px 24px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .bar-label {
+      width: 120px;
+      font-size: 11px;
+      color: var(--text-dim);
+      flex: 0 0 120px;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 10px;
+      background: var(--border-soft);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      border-radius: 5px;
+    }
+
+    .bar-val {
+      width: 34px;
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-dim);
+      flex: 0 0 34px;
+    }
+
+    /* ---------- CHAT ---------- */
+    .chat-wrap {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 145px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .msg {
+      max-width: 72%;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--gold-soft);
+      border: 1px solid var(--gold-border);
+      color: #f2e9d4;
+    }
+
+    .msg.assistant {
+      align-self: flex-start;
+      background: var(--panel-2);
+      border: 1px solid var(--border-soft);
+      color: var(--text);
+    }
+
+    .msg.assistant b,
+    .msg.user b {
+      color: var(--gold);
+    }
+
+    .msg-meta {
+      font-size: 9.5px;
+      color: var(--text-faint);
+      margin-bottom: 5px;
+      letter-spacing: .04em;
+    }
+
+    .chat-input-row {
+      border-top: 1px solid var(--border-soft);
+      padding: 16px 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input-row textarea {
+      flex: 1;
+      resize: none;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      padding: 11px 13px;
+      outline: none;
+      min-height: 44px;
+      max-height: 120px;
+    }
+
+    .chat-input-row textarea:focus {
+      border-color: var(--gold-border);
+    }
+
+    .chat-suggest {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px 14px 20px;
+      flex-wrap: wrap;
+    }
+
+    .suggest-chip {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-size: 10.5px;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+
+    .suggest-chip:hover {
+      border-color: var(--gold-border);
+      color: var(--gold);
+    }
+
+    .typing-dots span {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      margin-right: 3px;
+      animation: blink 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes blink {
+
+      0%,
+      80%,
+      100% {
+        opacity: .25;
+      }
+
+      40% {
+        opacity: 1;
+      }
+    }
+
+    /* ---------- UPLOAD ---------- */
+    .dropzone {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+
+    .dropzone.drag {
+      border-color: var(--gold-border);
+      background: var(--gold-soft);
+    }
+
+    .dropzone svg {
+      margin-bottom: 14px;
+      opacity: .7;
+    }
+
+    .dropzone .dz-title {
+      font-family: 'Source Serif 4', serif;
+      font-size: 17px;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .dropzone .dz-sub {
+      font-size: 11px;
+      color: var(--text-faint);
+    }
+
+    .file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      margin-top: 10px;
+      background: var(--panel);
+    }
+
+    .file-row .fname {
+      font-size: 12.5px;
+      color: var(--text);
+    }
+
+    .file-row .fsize {
+      font-size: 10.5px;
+      color: var(--text-faint);
+      margin-top: 3px;
+    }
+
+    .file-status {
+      font-size: 10px;
+      padding: 4px 9px;
+      border-radius: 4px;
+      border: 1px solid;
+    }
+
+    .fs-queued {
+      color: var(--text-dim);
+      border-color: var(--border);
+    }
+
+    .fs-processing {
+      color: var(--blue);
+      border-color: rgba(111, 159, 216, .45);
+      background: var(--blue-soft);
+    }
+
+    .fs-done {
+      color: var(--green);
+      border-color: rgba(124, 174, 130, .45);
+      background: rgba(124, 174, 130, 0.08);
+    }
+
+    .progress-track {
+      width: 110px;
+      height: 5px;
+      background: var(--border-soft);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--teal);
+      transition: width .3s;
+    }
+
+    /* ---------- SETTINGS ---------- */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 820px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      color: var(--text-dim);
+      font-size: 10.5px;
+      letter-spacing: .04em;
+      margin-bottom: 7px;
+    }
+
+    .field input[type=text] {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12.5px;
+      outline: none;
+    }
+
+    .field input[type=text]:focus {
+      border-color: var(--gold-border);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .toggle-row .t-title {
+      font-size: 12.5px;
+      color: var(--text);
+    }
+
+    .toggle-row .t-sub {
+      font-size: 10.5px;
+      color: var(--text-faint);
+      margin-top: 3px;
+    }
+
+    .switch {
+      width: 38px;
+      height: 21px;
+      border-radius: 11px;
+      background: var(--border);
+      position: relative;
+      cursor: pointer;
+      flex: 0 0 38px;
+      transition: background .15s;
+    }
+
+    .switch.on {
+      background: var(--teal);
+    }
+
+    .switch .knob {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      transition: left .15s;
+    }
+
+    .switch.on .knob {
+      left: 20px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-faint);
+    }
+
+    .empty-state .serif {
+      font-size: 16px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+  </style>
 </head>
+
 <body>
-<div id="root"></div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">EB</div>
+        <div>
+          <div class="brand-name">Evidence Board</div>
+          <div class="brand-sub">Customer intelligence</div>
+        </div>
+      </div>
+      <nav class="navlist" id="navlist"></nav>
+      <div class="sidebar-foot">
+        <span class="dot"></span> Live · 127.0.0.1:8000
+      </div>
+    </aside>
 
-<!-- React / ReactDOM (production UMD builds) -->
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<!-- Babel standalone: transforms the JSX below in-browser, no build step required -->
-<script src="https://unpkg.com/@babel/standalone@7/babel.min.js" crossorigin></script>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">Dashboard</h1>
+          <p id="page-sub">Customer intelligence → root cause → prioritized action</p>
+        </div>
+        <div class="topbar-actions" id="topbar-actions"></div>
+      </div>
+      <div class="content" id="page-root"></div>
+    </div>
+  </div>
 
-<!-- Raw JSX source, transformed at load time by the bootstrap script below -->
-<script type="application/jsx" id="app-source">
-const { useState, useEffect, useCallback, useMemo } = React;
+  <script src="assistant.js?v=2"></script>
+  <script>
+    /* ============================= ICONS ============================= */
+    const ICONS = {
+      dashboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="12" width="7" height="9" rx="1.2"/><rect x="3" y="16" width="7" height="5" rx="1.2"/></svg>',
+      cases: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg>',
+      evidence: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 8h10M7 12h10M7 16h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>',
+      analytics: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M11 20V4M18 20v-7"/></svg>',
+      assistant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8 8 0 1 1-3.4-6.55"/><path d="M21 5v5h-5"/><circle cx="9" cy="12" r="0.7" fill="currentColor"/><circle cx="13" cy="12" r="0.7" fill="currentColor"/></svg>',
+      upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',
+      settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.1.36.5 1 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>',
+    };
 
-const DEFAULT_API_BASE = (() => {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("api")) return params.get("api");
-  if (window.location.protocol === "file:") return "http://127.0.0.1:8000";
-  return window.location.origin.replace(/:\d+$/, ":8000");
-})();
+    /* ============================= DATA ============================= */
+    let CASES = [];
+    let DASHBOARD_STATS = null;
+    let OUTCOMES = [];
 
-function useApi(apiBase) {
-  const call = useCallback(
-    async (path, options = {}) => {
-      const res = await fetch(apiBase + path, {
-        headers: { "Content-Type": "application/json" },
-        ...options,
-      });
-      let body = null;
+    const STATUS_MAP = {
+      pending_review: "Awaiting review",
+      approved: "In progress",
+      rejected: "Dismissed",
+      resolved: "Resolved",
+      needs_reanalysis: "Reopened",
+    };
+
+    const TREND = [4, 6, 5, 8, 7, 9, 11, 10, 13, 12, 15, 17]; // Mock trend for chart
+
+    /* ============================= STATE ============================= */
+    let state = { page: 'dashboard', selectedCase: null, chatHistory: [], uploadedFiles: [] };
+
+    async function fetchData() {
       try {
-        body = await res.json();
-      } catch (e) {
-        body = null;
+        const dRes = await fetch("http://127.0.0.1:8000/dashboard");
+        if (dRes.ok) DASHBOARD_STATS = await dRes.json();
+        
+        const iRes = await fetch("http://127.0.0.1:8000/issues");
+        if (iRes.ok) {
+            const data = await iRes.json();
+            CASES = data.issues || [];
+            if (!state.selectedCase && CASES.length > 0) {
+                state.selectedCase = CASES[0].issue_id;
+            }
+        }
+        
+        route();
+      } catch (err) {
+        console.error("Failed to fetch data", err);
       }
-      if (!res.ok) {
-        const detail = (body && body.detail) || res.statusText;
-        throw new Error(detail);
+    }
+
+    const NAV = [
+      { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+      { id: 'cases', label: 'Cases', icon: 'cases' },
+      { id: 'evidence', label: 'Evidence Log', icon: 'evidence' },
+      { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+      { id: 'assistant', label: 'AI Assistant', icon: 'assistant' },
+      { id: 'upload', label: 'File Upload', icon: 'upload' },
+      { id: 'settings', label: 'Settings', icon: 'settings' },
+    ];
+
+    function renderNav() {
+      document.getElementById('navlist').innerHTML = NAV.map(n => `
+    <div class="navitem ${state.page === n.id ? 'active' : ''}" data-nav="${n.id}">
+      ${ICONS[n.icon]}<span>${n.label}</span>
+    </div>`).join('');
+      document.querySelectorAll('.navitem').forEach(el => {
+        el.addEventListener('click', () => { state.page = el.getAttribute('data-nav'); route(); });
+      });
+    }
+
+    function badgeClass(sev) { 
+      const s = (sev || '').toUpperCase();
+      return s === 'HIGH' || s === 'CRITICAL' ? 'badge-high' : s === 'MEDIUM' ? 'badge-medium' : 'badge-low'; 
+    }
+
+    /* ============================= ROUTER ============================= */
+    const TITLES = {
+      dashboard: ['Dashboard', 'Customer intelligence → root cause → prioritized action'],
+      cases: ['Priority Backlog', 'All open cases ranked by composite priority score'],
+      evidence: ['Evidence Log', 'Raw feedback exhibits linked to active cases'],
+      analytics: ['Analytics', 'Trends across channels, severity and recurrence'],
+      assistant: ['AI Assistant', 'Ask questions about cases, evidence and root causes'],
+      upload: ['File Upload', 'Import feedback exports for automatic case linking'],
+      settings: ['Settings', 'Connections, notifications and workspace preferences'],
+    };
+
+    function route() {
+      renderNav();
+      document.getElementById('page-title').textContent = TITLES[state.page][0];
+      document.getElementById('page-sub').textContent = TITLES[state.page][1];
+      renderTopActions();
+      const root = document.getElementById('page-root');
+      if (state.page === 'dashboard') root.innerHTML = pageDashboard();
+      if (state.page === 'cases') root.innerHTML = pageCases();
+      if (state.page === 'evidence') root.innerHTML = pageEvidence();
+      if (state.page === 'analytics') root.innerHTML = pageAnalytics();
+      if (state.page === 'assistant') root.innerHTML = pageAssistant();
+      if (state.page === 'upload') root.innerHTML = pageUpload();
+      if (state.page === 'settings') root.innerHTML = pageSettings();
+      afterRender();
+    }
+
+    function renderTopActions() {
+      const actions = document.getElementById('topbar-actions');
+      if (state.page === 'upload') {
+        actions.innerHTML = `<button class="btn btn-teal" id="btn-browse">Browse files</button>`;
+        return;
       }
-      return body;
-    },
-    [apiBase]
-  );
-  return call;
-}
+      if (state.page === 'assistant') {
+        actions.innerHTML = `<button class="btn" id="btn-clear-chat">Clear conversation</button>`;
+        return;
+      }
+      actions.innerHTML = `
+    <div class="status-pill"><span class="dot"></span> http://127.0.0.1:8000</div>
+    <button class="btn btn-solid" onclick="apiAction('/seed')">Load demo data</button>
+    <button class="btn btn-teal" onclick="apiAction('/analyze')">Run analysis</button>
+    <button class="btn btn-red" id="btn-reset" onclick="apiAction('/reset')">Reset</button>`;
+    }
 
-const PRIORITY_COLORS = {
-  Critical: "#C4432B",
-  High: "#E8A33D",
-  Medium: "#4FA3B0",
-  Low: "#6B7480",
-};
+    async function apiAction(endpoint) {
+      try {
+        await fetch("http://127.0.0.1:8000" + endpoint, { method: "POST" });
+        await fetchData();
+      } catch (e) { console.error(e); }
+    }
 
-const STATUS_LABELS = {
-  pending_review: "Awaiting review",
-  approved: "Approved · in progress",
-  rejected: "Dismissed",
-  resolved: "Resolved",
-  needs_reanalysis: "Reopened · needs reanalysis",
-};
-
-function EvidenceBar({ label, strength, metric, evidence }) {
-  const pct = Math.round(strength * 100);
-  return (
-    <div className="evidence-row">
-      <div className="evidence-row-top">
-        <span className="evidence-hypothesis">{label}</span>
-        <span className="evidence-pct">{pct}%</span>
-      </div>
-      <div className="evidence-track">
-        <div
-          className="evidence-fill"
-          style={{ width: pct + "%", background: pct >= 60 ? "#E8A33D" : "#4B5563" }}
-        />
-      </div>
-      <div className="evidence-caption">{evidence}</div>
+    /* ============================= DASHBOARD ============================= */
+    function pageDashboard() {
+      if (!DASHBOARD_STATS) return `<div style="padding:40px;text-align:center;">Loading...</div>`;
+      const sel = CASES.find(c => c.issue_id === state.selectedCase) || CASES[0] || null;
+      return `
+    <div class="stat-row">
+      <div class="stat"><div class="num">${DASHBOARD_STATS.total_feedback || 0}</div><div class="lbl">TOTAL FEEDBACK</div></div>
+      <div class="stat"><div class="num">${DASHBOARD_STATS.total_issues || 0}</div><div class="lbl">OPEN CASES</div></div>
+      <div class="stat"><div class="num red">${DASHBOARD_STATS.critical_issue_count || 0}</div><div class="lbl">CRITICAL</div></div>
+      <div class="stat"><div class="num">${DASHBOARD_STATS.recurring_issue_count || 0}</div><div class="lbl">RECURRING</div></div>
+      <div class="stat"><div class="num green">${DASHBOARD_STATS.resolved_issue_count || 0}</div><div class="lbl">RESOLVED</div></div>
+      <div class="stat"><div class="num gold">${DASHBOARD_STATS.analysis_runs || 0}</div><div class="lbl">ANALYSIS RUNS</div></div>
     </div>
-  );
-}
-
-function StatusStamp({ status }) {
-  const map = {
-    resolved: { text: "RESOLVED", color: "#3E8E7E" },
-    rejected: { text: "DISMISSED", color: "#8A8377" },
-    needs_reanalysis: { text: "REOPENED", color: "#C4432B" },
-  };
-  const cfg = map[status];
-  if (!cfg) return null;
-  return (
-    <div className="stamp" style={{ borderColor: cfg.color, color: cfg.color }}>
-      {cfg.text}
+    <div class="grid-2">
+      <div>
+        <div class="section-title">PRIORITY BACKLOG</div>
+        ${CASES.map(c => caseCardHTML(c, sel && c.issue_id === sel.issue_id)).join('')}
+      </div>
+      <div class="panel">${sel ? caseDetailHTML(sel) : '<div class="empty-state">No cases available.</div>'}</div>
     </div>
-  );
-}
+  `;
+    }
 
-function StatBlock({ label, value, accent }) {
-  return (
-    <div className="stat-block">
-      <div className="stat-value" style={accent ? { color: accent } : undefined}>
-        {value}
-      </div>
-      <div className="stat-label">{label}</div>
+    function caseCardHTML(c, selected) {
+      return `
+  <div class="case-card ${selected ? 'selected' : ''}" data-case="${c.issue_id}">
+    <div class="row1">
+      <span class="issue-id">${c.issue_id}</span>
+      <span class="score" style="color:${selected ? 'var(--gold)' : 'var(--text)'}">${c.priority_score ? c.priority_score.toFixed(1) : '0'}</span>
     </div>
-  );
-}
+    <div class="title">${c.label}</div>
+    <span class="badge ${badgeClass(c.priority_label)}">${c.priority_label}</span>
+    <span class="meta">${c.feedback_count} exhibits · ${(c.channels || []).length} channels</span>
+    <div class="status">${STATUS_MAP[c.status] || c.status}</div>
+  </div>`;
+    }
 
-function CaseCard({ issue, selected, onSelect }) {
-  const color = PRIORITY_COLORS[issue.priority_label] || "#6B7480";
-  return (
-    <button className={"case-card" + (selected ? " case-card--selected" : "")} onClick={() => onSelect(issue.issue_id)}>
-      <div className="case-card-row">
-        <span className="case-id">{issue.issue_id}</span>
-        <span className="case-score" style={{ color }}>
-          {issue.priority_score}
-        </span>
+    function caseDetailHTML(c) {
+      return `
+    <div class="detail-header">
+      <div class="detail-eyebrow">CASE FILE · ${c.issue_id}</div>
+      <h2 class="detail-title">${c.label}</h2>
+      <div class="detail-badges">
+        <span class="badge ${badgeClass(c.priority_label)}">${c.priority_label} · ${c.priority_score ? c.priority_score.toFixed(1) : '0'}/100</span>
+        ${c.journey ? `<span class="tag">${c.journey}</span>` : ''}
+        ${c.feature ? `<span class="tag">${c.feature}</span>` : ''}
       </div>
-      <div className="case-title">{issue.label}</div>
-      <div className="case-meta">
-        <span className="badge" style={{ borderColor: color, color }}>
-          {issue.priority_label}
-        </span>
-        <span className="case-meta-text">
-          {issue.feedback_count} exhibits · {issue.channels.length} channels
-        </span>
+    </div>
+    <div class="hr"></div>
+    <div class="breakdown">
+      <div><div class="num">${c.priority_breakdown?.customer_impact || 0}</div><div class="lbl">CUSTOMER IMPACT</div></div>
+      <div><div class="num">${c.priority_breakdown?.business_impact || 0}</div><div class="lbl">BUSINESS IMPACT</div></div>
+      <div><div class="num">${c.priority_breakdown?.recurrence_score || 0}</div><div class="lbl">RECURRENCE</div></div>
+      <div><div class="num">${c.priority_breakdown?.evidence_confidence || 0}</div><div class="lbl">EVIDENCE CONFIDENCE</div></div>
+    </div>
+    <div class="hr"></div>
+    <div class="exhibits">
+      <div class="exhibit-title" style="margin-top:18px;">EXHIBITS — CUSTOMER EVIDENCE</div>
+      ${(c.evidence_sample || []).map(q => `<div class="quote">"${q}"</div>`).join('')}
+    </div>
+  `;
+    }
+
+    /* ============================= CASES PAGE ============================= */
+    function pageCases() {
+      const sel = CASES.find(c => c.issue_id === state.selectedCase) || CASES[0];
+      return `
+    <div class="grid-2">
+      <div>
+        <div class="section-title">ALL CASES (${CASES.length})</div>
+        ${CASES.map(c => caseCardHTML(c, sel && c.issue_id === sel.issue_id)).join('')}
       </div>
-      <div className="case-status">{STATUS_LABELS[issue.status] || issue.status}</div>
-    </button>
-  );
-}
+      <div class="panel">${sel ? caseDetailHTML(sel) : '<div class="empty-state">No cases available.</div>'}</div>
+    </div>
+  `;
+    }
 
-function CaseDetail({ issue, apiBase, api, onChanged, notice }) {
-  const [owner, setOwner] = useState(issue.owner || "");
-  const [notes, setNotes] = useState("");
-  const [modifiedAction, setModifiedAction] = useState("");
-  const [showOutcomeForm, setShowOutcomeForm] = useState(false);
-  const [beforeVal, setBeforeVal] = useState(issue.intervention.kpi_current ?? "");
-  const [afterVal, setAfterVal] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    setOwner(issue.owner || issue.intervention.owner || "");
-    setBeforeVal(issue.intervention.kpi_current ?? "");
-    setAfterVal("");
-    setShowOutcomeForm(false);
-  }, [issue.issue_id]);
-
-  const decide = async (decision) => {
-    setBusy(true);
-    try {
-      await api("/validate", {
-        method: "POST",
-        body: JSON.stringify({
-          issue_id: issue.issue_id,
-          decision,
-          owner,
-          notes,
-          modified_action: decision === "modified" ? modifiedAction : undefined,
-        }),
+    /* ============================= EVIDENCE PAGE ============================= */
+    function pageEvidence() {
+      // Flatten all evidence from all cases
+      const ev = [];
+      CASES.forEach(c => {
+         if(c.evidence_sample) {
+            c.evidence_sample.forEach((q, i) => {
+               ev.push({
+                 channel: (c.channels || [])[i % (c.channels||['UNKNOWN']).length] || 'UNKNOWN',
+                 quote: q,
+                 case: c.label,
+                 sentiment: 'Negative',
+                 date: new Date(c.created_at || Date.now()).toLocaleDateString()
+               });
+            });
+         }
       });
-      await onChanged(`Case ${issue.issue_id} marked ${decision}.`);
-    } catch (e) {
-      await onChanged("Error: " + e.message, true);
-    } finally {
-      setBusy(false);
+      return `
+    <div class="panel">
+      <table class="evidence">
+        <thead><tr><th>CHANNEL</th><th>EXHIBIT</th><th>LINKED CASE</th><th>SENTIMENT</th><th>DATE</th></tr></thead>
+        <tbody>
+          ${ev.map(e => `
+            <tr>
+              <td><span class="chip">${e.channel}</span></td>
+              <td class="quote-cell">"${e.quote}"</td>
+              <td>${e.case}</td>
+              <td>${e.sentiment}</td>
+              <td>${e.date}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
     }
-  };
 
-  const submitOutcome = async () => {
-    setBusy(true);
-    try {
-      await api("/outcomes", {
-        method: "POST",
-        body: JSON.stringify({
-          issue_id: issue.issue_id,
-          kpi_name: issue.intervention.kpi_name,
-          before_value: parseFloat(beforeVal),
-          after_value: parseFloat(afterVal),
-          target_value: issue.intervention.kpi_target,
-        }),
+    /* ============================= ANALYTICS PAGE ============================= */
+    function pageAnalytics() {
+      const channelCounts = {};
+      CASES.forEach(c => {
+         (c.channels || []).forEach(ch => {
+             channelCounts[ch] = (channelCounts[ch] || 0) + 1;
+         });
       });
-      await onChanged(`Outcome recorded for ${issue.issue_id}.`);
-      setShowOutcomeForm(false);
-    } catch (e) {
-      await onChanged("Error: " + e.message, true);
-    } finally {
-      setBusy(false);
-    }
-  };
+      const channelArr = Object.entries(channelCounts).sort((a,b)=>b[1]-a[1]);
+      const maxCh = Math.max(...channelArr.map(c => c[1]), 1);
+      
+      const maxT = Math.max(...TREND);
+      const pts = TREND.map((v, i) => `${(i / (TREND.length - 1)) * 560},${70 - (v / maxT) * 60}`).join(' ');
+      
+      const tags = [...new Set(CASES.flatMap(c => [c.journey, c.feature]).filter(Boolean))];
 
-  const color = PRIORITY_COLORS[issue.priority_label] || "#6B7480";
-  const canValidate = issue.status === "pending_review" || issue.status === "needs_reanalysis";
-  const canReportOutcome = issue.status === "approved";
-
-  return (
-    <div className="case-detail">
-      <StatusStamp status={issue.status} />
-      <div className="case-detail-header">
-        <div className="eyebrow">Case file · {issue.issue_id}</div>
-        <h2>{issue.label}</h2>
-        <div className="case-detail-tags">
-          <span className="badge" style={{ borderColor: color, color }}>
-            {issue.priority_label} · {issue.priority_score}/100
-          </span>
-          <span className="pill">{issue.journey}</span>
-          <span className="pill">{issue.feature}</span>
+      return `
+    <div class="grid-2" style="grid-template-columns:1fr 1fr;">
+      <div class="panel chart-panel">
+        <div class="section-title">FEEDBACK BY CHANNEL</div>
+        ${channelArr.map(([label, val]) => `
+          <div class="bar-row">
+            <div class="bar-label">${label}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(val / maxCh) * 100}%"></div></div>
+            <div class="bar-val">${val}</div>
+          </div>`).join('')}
+      </div>
+      <div class="panel chart-panel">
+        <div class="section-title">SEVERITY DISTRIBUTION</div>
+        ${['High', 'Medium', 'Low'].map(sev => {
+        const count = CASES.filter(c => c.priority_label === sev).length;
+        return `<div class="bar-row">
+            <div class="bar-label">${sev.toUpperCase()}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${CASES.length ? (count / CASES.length) * 100 : 0}%"></div></div>
+            <div class="bar-val">${count}</div>
+          </div>`;
+      }).join('')}
+        <div class="section-title" style="margin-top:22px;">TOP TAGS</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          ${tags.map(t => `<span class="tag">${t}</span>`).join('')}
         </div>
       </div>
-
-      <section className="section">
-        <div className="section-title">Priority breakdown</div>
-        <div className="score-grid">
-          <div>
-            <div className="score-num">{issue.priority_breakdown.customer_impact}</div>
-            <div className="score-lbl">Customer impact</div>
-          </div>
-          <div>
-            <div className="score-num">{issue.priority_breakdown.business_impact}</div>
-            <div className="score-lbl">Business impact</div>
-          </div>
-          <div>
-            <div className="score-num">{issue.priority_breakdown.recurrence_score}</div>
-            <div className="score-lbl">Recurrence</div>
-          </div>
-          <div>
-            <div className="score-num">{issue.priority_breakdown.evidence_confidence}</div>
-            <div className="score-lbl">Evidence confidence</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-title">Exhibits — customer evidence ({issue.channels.join(", ")})</div>
-        <ul className="exhibit-list">
-          {issue.evidence_sample.map((text, idx) => (
-            <li key={idx}>&ldquo;{text}&rdquo;</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="section">
-        <div className="section-title">Root-cause hypotheses, ranked by evidence strength</div>
-        {issue.root_causes.map((rc, idx) => (
-          <EvidenceBar
-            key={idx}
-            label={rc.hypothesis}
-            strength={rc.evidence_strength}
-            metric={rc.metric}
-            evidence={rc.supporting_evidence}
-          />
-        ))}
-      </section>
-
-      <section className="section">
-        <div className="section-title">Recommended intervention</div>
-        <div className="intervention-box">
-          <p>{issue.intervention.recommended_action}</p>
-          <div className="intervention-meta">
-            <div>
-              <span className="meta-key">Owner</span>
-              <span className="meta-val">{issue.intervention.owner}</span>
-            </div>
-            <div>
-              <span className="meta-key">KPI</span>
-              <span className="meta-val">{issue.intervention.kpi_name}</span>
-            </div>
-            <div>
-              <span className="meta-key">Current</span>
-              <span className="meta-val">{issue.intervention.kpi_current ?? "—"}</span>
-            </div>
-            <div>
-              <span className="meta-key">Target</span>
-              <span className="meta-val">{issue.intervention.kpi_target ?? "—"}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {canValidate && (
-        <section className="section">
-          <div className="section-title">Human validation</div>
-          <div className="form-row">
-            <label>Owner</label>
-            <input value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="Assign a team" />
-          </div>
-          <div className="form-row">
-            <label>Notes</label>
-            <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional review notes" />
-          </div>
-          <div className="form-row">
-            <label>Modify action (optional)</label>
-            <input
-              value={modifiedAction}
-              onChange={(e) => setModifiedAction(e.target.value)}
-              placeholder="Override the recommended action"
-            />
-          </div>
-          <div className="button-row">
-            <button className="btn btn-approve" disabled={busy} onClick={() => decide("approved")}>
-              Approve
-            </button>
-            <button
-              className="btn btn-modify"
-              disabled={busy || !modifiedAction}
-              onClick={() => decide("modified")}
-            >
-              Approve with changes
-            </button>
-            <button className="btn btn-reject" disabled={busy} onClick={() => decide("rejected")}>
-              Reject
-            </button>
-          </div>
-        </section>
-      )}
-
-      {canReportOutcome && (
-        <section className="section">
-          <div className="section-title">Outcome monitoring</div>
-          {!showOutcomeForm ? (
-            <button className="btn btn-outline" onClick={() => setShowOutcomeForm(true)}>
-              Report outcome
-            </button>
-          ) : (
-            <div>
-              <div className="form-row">
-                <label>KPI</label>
-                <input value={issue.intervention.kpi_name} disabled />
-              </div>
-              <div className="form-row form-row-split">
-                <div>
-                  <label>Before</label>
-                  <input value={beforeVal} onChange={(e) => setBeforeVal(e.target.value)} />
-                </div>
-                <div>
-                  <label>After</label>
-                  <input value={afterVal} onChange={(e) => setAfterVal(e.target.value)} placeholder="Observed value" />
-                </div>
-              </div>
-              <div className="button-row">
-                <button className="btn btn-approve" disabled={busy || afterVal === ""} onClick={submitOutcome}>
-                  Submit outcome
-                </button>
-                <button className="btn btn-outline" disabled={busy} onClick={() => setShowOutcomeForm(false)}>
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
     </div>
-  );
-}
-
-function IngestPanel({ api, onIngested, notice }) {
-  const [open, setOpen] = useState(false);
-  const [channel, setChannel] = useState("app_review");
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const submit = async () => {
-    if (!text.trim()) return;
-    setBusy(true);
-    try {
-      await api("/ingest", {
-        method: "POST",
-        body: JSON.stringify({ feedback: [{ channel, text }], operational_metrics: [] }),
-      });
-      setText("");
-      await onIngested("Feedback ingested. Run analysis to fold it into the backlog.");
-    } catch (e) {
-      await onIngested("Error: " + e.message, true);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="panel">
-      <button className="panel-toggle" onClick={() => setOpen(!open)}>
-        {open ? "▾" : "▸"} Add feedback manually
-      </button>
-      {open && (
-        <div className="panel-body">
-          <div className="form-row">
-            <label>Channel</label>
-            <select value={channel} onChange={(e) => setChannel(e.target.value)}>
-              <option value="app_review">App review</option>
-              <option value="support_ticket">Support ticket</option>
-              <option value="survey">Survey</option>
-              <option value="email">Email</option>
-              <option value="social">Social</option>
-            </select>
-          </div>
-          <div className="form-row">
-            <label>Text</label>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} />
-          </div>
-          <button className="btn btn-approve" disabled={busy || !text.trim()} onClick={submit}>
-            Ingest
-          </button>
-        </div>
-      )}
+    <div class="panel chart-panel" style="margin-top:20px;">
+      <div class="section-title">FEEDBACK VOLUME — LAST 12 WEEKS</div>
+      <svg viewBox="0 0 570 90" width="100%" height="110" preserveAspectRatio="none">
+        <polyline points="${pts}" fill="none" stroke="#d4a853" stroke-width="2"/>
+        ${TREND.map((v, i) => `<circle cx="${(i / (TREND.length - 1)) * 560}" cy="${70 - (v / maxT) * 60}" r="2.6" fill="#d4a853"/>`).join('')}
+      </svg>
     </div>
-  );
-}
-
-function App() {
-  const [apiBase] = useState(DEFAULT_API_BASE);
-  const api = useApi(apiBase);
-
-  const [connected, setConnected] = useState(null);
-  const [dashboard, setDashboard] = useState(null);
-  const [backlog, setBacklog] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [toast, setToast] = useState(null);
-  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-
-  const refresh = useCallback(async () => {
-    try {
-      const [db, bl] = await Promise.all([api("/dashboard"), api("/backlog")]);
-      setDashboard(db);
-      setBacklog(bl.backlog);
-      setConnected(true);
-    } catch (e) {
-      setConnected(false);
+  `;
     }
-  }, [api]);
 
-  useEffect(() => {
-    refresh();
-    const interval = setInterval(refresh, 8000);
-    return () => clearInterval(interval);
-  }, [refresh]);
-
-  const showToast = async (message, isError) => {
-    setToast({ message, isError: !!isError });
-    await refresh();
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  const seed = async () => {
-    try {
-      await api("/seed", { method: "POST" });
-      await showToast("Demo dataset loaded — 17 feedback items, 13 operational metrics.");
-    } catch (e) {
-      await showToast("Error: " + e.message, true);
-    }
-  };
-
-  const runAnalysis = async () => {
-    setLoadingAnalysis(true);
-    try {
-      const res = await api("/analyze", { method: "POST" });
-      await showToast(`Analysis complete — ${res.issues_created_or_updated} case(s) updated.`);
-    } catch (e) {
-      await showToast("Error: " + e.message, true);
-    } finally {
-      setLoadingAnalysis(false);
-    }
-  };
-
-  const resetAll = async () => {
-    try {
-      await api("/reset", { method: "POST" });
-      setSelectedId(null);
-      await showToast("Store cleared.");
-    } catch (e) {
-      await showToast("Error: " + e.message, true);
-    }
-  };
-
-  const selectedIssue = useMemo(
-    () => backlog.find((i) => i.issue_id === selectedId) || null,
-    [backlog, selectedId]
-  );
-
-  useEffect(() => {
-    if (!selectedId && backlog.length > 0) setSelectedId(backlog[0].issue_id);
-  }, [backlog, selectedId]);
-
-  return (
-    <div className="app">
-      <header className="header">
-        <div className="brand">
-          <div className="brand-mark">EB</div>
-          <div>
-            <div className="brand-title">Evidence Board</div>
-            <div className="brand-sub">Customer intelligence → root cause → prioritized action</div>
-          </div>
-        </div>
-        <div className="header-actions">
-          <span className={"conn-dot " + (connected ? "conn-ok" : connected === false ? "conn-bad" : "")} />
-          <span className="conn-label">{apiBase}</span>
-          <button className="btn btn-outline" onClick={seed}>
-            Load demo data
-          </button>
-          <button className="btn btn-approve" disabled={loadingAnalysis} onClick={runAnalysis}>
-            {loadingAnalysis ? "Analyzing…" : "Run analysis"}
-          </button>
-          <button className="btn btn-reject" onClick={resetAll}>
-            Reset
-          </button>
-        </div>
-      </header>
-
-      {connected === false && (
-        <div className="banner banner-error">
-          Can't reach the API at <code>{apiBase}</code>. Start the backend (see README) or add
-          <code>?api=http://host:port</code> to the URL.
-        </div>
-      )}
-
-      {dashboard && (
-        <div className="stats-row">
-          <StatBlock label="Total feedback" value={dashboard.total_feedback} />
-          <StatBlock label="Open cases" value={dashboard.total_issues - dashboard.resolved_issue_count} />
-          <StatBlock label="Critical" value={dashboard.critical_issue_count} accent={PRIORITY_COLORS.Critical} />
-          <StatBlock label="Recurring" value={dashboard.recurring_issue_count} />
-          <StatBlock label="Resolved" value={dashboard.resolved_issue_count} accent="#3E8E7E" />
-          <StatBlock label="Analysis runs" value={dashboard.analysis_runs} />
-        </div>
-      )}
-
-      <IngestPanel api={api} onIngested={showToast} />
-
-      <div className="main-grid">
-        <div className="backlog-col">
-          <div className="section-title">Priority backlog</div>
-          {backlog.length === 0 && (
-            <div className="empty-state">
-              No cases yet. Click <strong>Load demo data</strong>, then <strong>Run analysis</strong>.
-            </div>
-          )}
-          {backlog.map((issue) => (
-            <CaseCard key={issue.issue_id} issue={issue} selected={issue.issue_id === selectedId} onSelect={setSelectedId} />
-          ))}
-        </div>
-        <div className="detail-col">
-          {selectedIssue ? (
-            <CaseDetail issue={selectedIssue} apiBase={apiBase} api={api} onChanged={showToast} />
-          ) : (
-            <div className="empty-state">Select a case from the backlog to view its evidence file.</div>
-          )}
+    /* ============================= AI ASSISTANT PAGE ============================= */
+    function pageAssistant() {
+      if (state.chatHistory.length === 0) {
+        state.chatHistory.push({ role: 'assistant', content: "I'm the Evidence Board assistant. Ask me about open cases, root causes, or what to prioritize next — I have context on all 6 active cases and the linked evidence." });
+      }
+      return `
+    <div class="chat-wrap">
+      <div class="chat-messages" id="chat-messages">
+        ${state.chatHistory.map(m => `
+          <div class="msg ${m.role === 'user' ? 'user' : 'assistant'}">
+            <div class="msg-meta">${m.role === 'user' ? 'YOU' : 'EVIDENCE BOARD AI'}</div>
+            <div>${escapeHtml(m.content).replace(/\n/g, '<br>')}</div>
+          </div>`).join('')}
+        <div id="typing-indicator" style="display:none;" class="msg assistant">
+          <div class="msg-meta">EVIDENCE BOARD AI</div>
+          <div class="typing-dots"><span></span><span></span><span></span></div>
         </div>
       </div>
-
-      {toast && <div className={"toast " + (toast.isError ? "toast-error" : "")}>{toast.message}</div>}
+      <div class="chat-suggest">
+        <div class="suggest-chip" data-q="Which case should we fix first and why?">Which case first?</div>
+        <div class="suggest-chip" data-q="Summarize the Payment Failure case in two sentences.">Summarize Payment Failure</div>
+        <div class="suggest-chip" data-q="What's driving the recurrence score on Login / Authentication Failure?">Explain recurrence score</div>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" placeholder="Ask about a case, an exhibit, or what to prioritize..."></textarea>
+        <button class="btn btn-teal" id="chat-send">Send</button>
+      </div>
     </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-
-</script>
-
-<script>
-  (function () {
-    var src = document.getElementById("app-source").textContent;
-    try {
-      var compiled = Babel.transform(src, {
-        presets: [["react", { runtime: "classic" }]],
-      }).code;
-      (0, eval)(compiled);
-    } catch (err) {
-      document.getElementById("root").innerHTML =
-        '<div style="font-family:monospace;padding:32px;color:#E8B4A8;white-space:pre-wrap;">' +
-        "Failed to start the app:\n" + (err && err.message ? err.message : String(err)) +
-        "</div>";
-      console.error(err);
+  `;
     }
-  })();
-</script>
+
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+    function renderChatMessages() {
+      const box = document.getElementById('chat-messages');
+      const typing = document.getElementById('typing-indicator');
+      if(!box || !typing) return;
+      box.querySelectorAll('.msg:not(#typing-indicator)').forEach(el => el.remove());
+      state.chatHistory.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'msg ' + (m.role === 'user' ? 'user' : 'assistant');
+        div.innerHTML = `<div class="msg-meta">${m.role === 'user' ? 'YOU' : 'EVIDENCE BOARD AI'}</div><div>${escapeHtml(m.content).replace(/\\n/g, '<br>')}</div>`;
+        box.insertBefore(div, typing);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    /* ============================= UPLOAD PAGE ============================= */
+    function pageUpload() {
+      return `
+    <div class="panel" style="padding:26px;max-width:760px;">
+      <div class="dropzone" id="dropzone">
+        ${ICONS.upload.replace('width="24" height="24"', 'width="34" height="34"').replace('stroke-width="1.6"', 'stroke-width="1.3"')}
+        <div class="dz-title">Drop feedback exports here</div>
+        <div class="dz-sub">CSV, JSON, or TXT exports from support tools, surveys, or app store reviews · up to 20MB each</div>
+      </div>
+      <input type="file" id="file-input" multiple style="display:none">
+      <div id="file-list" style="margin-top:6px;"></div>
+    </div>
+  `;
+    }
+
+    function humanSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function handleFiles(fileList) {
+      Array.from(fileList).forEach(f => {
+        const entry = { name: f.name, size: f.size, status: 'processing', progress: 0 };
+        state.uploadedFiles.unshift(entry);
+        renderFileList();
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const payload = JSON.parse(e.target.result);
+                const res = await fetch("http://127.0.0.1:8000/ingest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    entry.status = 'done';
+                    renderFileList();
+                    fetchData(); // Refresh data
+                } else {
+                    entry.status = 'queued'; // Error state
+                    renderFileList();
+                }
+            } catch(err) {
+                console.error("Upload error", err);
+                entry.status = 'queued';
+                renderFileList();
+            }
+        };
+        reader.readAsText(f);
+      });
+    }
+
+    function renderFileList() {
+      const list = document.getElementById('file-list');
+      if (!list) return;
+      if (state.uploadedFiles.length === 0) { list.innerHTML = ''; return; }
+      list.innerHTML = state.uploadedFiles.map(f => `
+    <div class="file-row">
+      <div>
+        <div class="fname">${f.name}</div>
+        <div class="fsize">${humanSize(f.size)}</div>
+        ${f.status === 'processing' ? `<div class="progress-track"><div class="progress-fill" style="width:${f.progress}%"></div></div>` : ''}
+      </div>
+      <span class="file-status ${f.status === 'queued' ? 'fs-queued' : f.status === 'processing' ? 'fs-processing' : 'fs-done'}">
+        ${f.status === 'queued' ? 'Queued' : f.status === 'processing' ? 'Processing…' : 'Linked to cases'}
+      </span>
+    </div>`).join('');
+    }
+
+    /* ============================= SETTINGS PAGE ============================= */
+    function pageSettings() {
+      return `
+    <div class="settings-grid">
+      <div>
+        <div class="field">
+          <label>WORKSPACE ENDPOINT</label>
+          <input type="text" value="http://127.0.0.1:8000">
+        </div>
+        <div class="field">
+          <label>WEBHOOK URL FOR NEW CASES</label>
+          <input type="text" placeholder="https://hooks.example.com/evidence-board">
+        </div>
+        <div class="field">
+          <label>DEFAULT PRIORITY THRESHOLD</label>
+          <input type="text" value="60.0">
+        </div>
+      </div>
+      <div>
+        <div class="toggle-row">
+          <div><div class="t-title">Auto-run analysis on new feedback</div><div class="t-sub">Recompute priority scores as evidence arrives</div></div>
+          <div class="switch on" data-toggle></div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-title">Notify on critical severity</div><div class="t-sub">Send an alert the moment a case crosses critical</div></div>
+          <div class="switch on" data-toggle></div>
+        </div>
+        <div class="toggle-row">
+          <div><div class="t-title">Weekly digest email</div><div class="t-sub">Summary of open cases every Monday</div></div>
+          <div class="switch" data-toggle></div>
+        </div>
+        <div class="toggle-row" style="border-bottom:none;">
+          <div><div class="t-title">Share anonymized exhibits with AI assistant</div><div class="t-sub">Let the assistant reference exact quotes when answering</div></div>
+          <div class="switch on" data-toggle></div>
+        </div>
+      </div>
+    </div>
+  `;
+    }
+
+    /* ============================= EVENT WIRING ============================= */
+    function afterRender() {
+      document.querySelectorAll('[data-case]').forEach(el => {
+        el.addEventListener('click', () => { state.selectedCase = el.getAttribute('data-case'); route(); });
+      });
+      const resetBtn = document.getElementById('btn-reset');
+      if (resetBtn) resetBtn.addEventListener('click', () => { state.selectedCase = CASES[0].id; route(); });
+
+      if (state.page === 'assistant') {
+        const chatSendBtn = document.getElementById('chat-send');
+        if(chatSendBtn) chatSendBtn.addEventListener('click', typeof sendChat === 'function' ? sendChat : () => alert('sendChat missing'));
+        const ta = document.getElementById('chat-input');
+        if(ta) ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if(typeof sendChat === 'function') sendChat(); } });
+        document.querySelectorAll('.suggest-chip').forEach(el => {
+          el.addEventListener('click', () => { document.getElementById('chat-input').value = el.getAttribute('data-q'); if(typeof sendChat === 'function') sendChat(); });
+        });
+        document.getElementById('chat-messages').scrollTop = 999999;
+        const clearBtn = document.getElementById('btn-clear-chat');
+        if (clearBtn) clearBtn.addEventListener('click', () => { state.chatHistory = []; route(); });
+      }
+
+      if (state.page === 'upload') {
+        const dz = document.getElementById('dropzone');
+        const fi = document.getElementById('file-input');
+        dz.addEventListener('click', () => fi.click());
+        const browseBtn = document.getElementById('btn-browse');
+        if (browseBtn) browseBtn.addEventListener('click', () => fi.click());
+        fi.addEventListener('change', e => handleFiles(e.target.files));
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+        dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); handleFiles(e.dataTransfer.files); });
+        renderFileList();
+      }
+
+      if (state.page === 'settings') {
+        document.querySelectorAll('[data-toggle]').forEach(el => {
+          el.addEventListener('click', () => el.classList.toggle('on'));
+        });
+      }
+    }
+
+    fetchData();
+  </script>
 </body>
+
 </html>

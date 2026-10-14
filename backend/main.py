@@ -196,6 +196,7 @@ def parse_uploaded_file_data(filename: str, content_bytes: bytes) -> tuple[list[
                     channel = normalize_channel(row_norm.get("channel") or row_norm.get("source") or row_norm.get("type"))
                     cust_id = row_norm.get("customer_id") or row_norm.get("user_id") or row_norm.get("id") or None
                     ts = row_norm.get("timestamp") or row_norm.get("date") or None
+                    cat = row_norm.get("category") or None
                     feedback_items.append({
                         "text": str(text),
                         "channel": channel,

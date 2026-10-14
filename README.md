@@ -134,3 +134,13 @@ semantic reasoning. Swap either for a call to your LLM of choice (OpenAI,
 Anthropic, OpenRouter, etc.) — the LangGraph wiring in `graph.py` and every
 downstream endpoint stay unchanged, since they only depend on the *shape*
 of what those functions return, not how it's produced.
+
+## Tests
+
+```bash
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+```
+
+The suite covers the health, seed, ingest, analyze, issue lookup and reset endpoints, plus JSON and CSV upload parsing.
